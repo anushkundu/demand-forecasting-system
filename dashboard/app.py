@@ -870,8 +870,8 @@ with st.sidebar:
     # Quick links
     st.markdown("**🔗 Quick Links**")
     st.markdown("""
-    <a class="sidebar-link" href="#">📄 API Documentation</a>
-    <a class="sidebar-link" href="#">📓 Model Notebook</a>
+    <a class="sidebar-link" href="https://github.com/anushkundu/demand-forecasting-system/blob/main/notebooks/00_EDA_BigQuery_Queries.sql" target="_blank">📄 SQL BigQuery Queries</a>
+    <a class="sidebar-link" href="https://github.com/anushkundu/demand-forecasting-system/blob/main/notebooks/03_Model_Training.ipynb" target="_blank">📓 Model Notebook</a>
     <a class="sidebar-link" href="https://github.com/anushkundu" target="_blank">
         🐙 GitHub Repo
     </a>
@@ -953,8 +953,9 @@ st.markdown("<br>", unsafe_allow_html=True)
 # TAB LAYOUT
 # ============================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🔮 Predict Demand",
+    "🗃️ SQL Queries",
     "📊 EDA Insights",
     "📈 Model Performance",
     "🔍 Feature Insights",
@@ -1282,11 +1283,266 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
+
 # ============================================
-# TAB 2: EDA INSIGHTS
+# TAB 2: SQL QUERIES
 # ============================================
 
 with tab2:
+    st.markdown("""
+    <div class="section-header animate-fade-up">
+        <div class="icon">🗃️</div>
+        <div class="text">
+            <h2>BigQuery SQL — EDA Queries</h2>
+            <p>12 analytical queries used to explore 3M+ retail transactions</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    sql_queries = {
+        "1. Dataset Overview": {
+            "sql": """SELECT
+    COUNT(*) as total_rows,
+    COUNT(DISTINCT store_nbr) as num_stores,
+    COUNT(DISTINCT family) as num_product_categories,
+    COUNT(DISTINCT date) as num_days,
+    MIN(date) as first_date,
+    MAX(date) as last_date,
+    ROUND(AVG(sales), 2) as avg_daily_sales
+FROM `demand_forecasting.sales`;""",
+            "insight": "3M rows, 54 stores, 33 categories spanning 2013-2017. Enough data to build reliable ML models.",
+            "icon": "📋"
+        },
+        "2. Sales by Category": {
+            "sql": """SELECT
+    family as product_category,
+    ROUND(SUM(sales), 0) as total_sales,
+    ROUND(AVG(sales), 2) as avg_daily_sales,
+    COUNTIF(sales = 0) as zero_sales_days,
+    ROUND(COUNTIF(sales = 0) * 100.0 / COUNT(*), 1) as zero_sales_pct
+FROM `demand_forecasting.sales`
+GROUP BY family
+ORDER BY total_sales DESC;""",
+            "insight": "GROCERY I = 35% of total sales. BABY CARE has 82% zero-sales days — excluded from ML pipeline.",
+            "icon": "🛒"
+        },
+        "3. Store Performance": {
+            "sql": """SELECT
+    s.store_nbr, s.city, s.type as store_type,
+    ROUND(SUM(t.sales), 0) as total_sales,
+    ROUND(SUM(t.sales) * 100.0 /
+        (SELECT SUM(sales) FROM `demand_forecasting.sales`), 2
+    ) as pct_of_total
+FROM `demand_forecasting.sales` t
+JOIN `demand_forecasting.stores` s ON t.store_nbr = s.store_nbr
+GROUP BY s.store_nbr, s.city, s.type
+ORDER BY total_sales DESC LIMIT 10;""",
+            "insight": "Top 10 stores generate 55% of revenue. Type A stores average 3.5x more than Type D.",
+            "icon": "🏪"
+        },
+        "4. Weekly Seasonality": {
+            "sql": """SELECT
+    CASE EXTRACT(DAYOFWEEK FROM date)
+        WHEN 1 THEN 'Sunday'    WHEN 2 THEN 'Monday'
+        WHEN 3 THEN 'Tuesday'   WHEN 4 THEN 'Wednesday'
+        WHEN 5 THEN 'Thursday'  WHEN 6 THEN 'Friday'
+        WHEN 7 THEN 'Saturday'
+    END as day_name,
+    ROUND(AVG(sales), 2) as avg_sales
+FROM `demand_forecasting.sales`
+GROUP BY day_name, EXTRACT(DAYOFWEEK FROM date)
+ORDER BY EXTRACT(DAYOFWEEK FROM date);""",
+            "insight": "Saturday sales are 45% higher than Tuesday. day_of_week became a critical model feature.",
+            "icon": "📅"
+        },
+        "5. Monthly Seasonality": {
+            "sql": """SELECT
+    EXTRACT(MONTH FROM date) as month_num,
+    CASE EXTRACT(MONTH FROM date)
+        WHEN 1 THEN 'Jan' WHEN 2 THEN 'Feb' WHEN 3 THEN 'Mar'
+        WHEN 4 THEN 'Apr' WHEN 5 THEN 'May' WHEN 6 THEN 'Jun'
+        WHEN 7 THEN 'Jul' WHEN 8 THEN 'Aug' WHEN 9 THEN 'Sep'
+        WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'
+    END as month_name,
+    ROUND(AVG(sales), 2) as avg_sales
+FROM `demand_forecasting.sales`
+GROUP BY month_num, month_name
+ORDER BY month_num;""",
+            "insight": "December is 45% above annual average. January drops 15%. Seasonal features are essential.",
+            "icon": "📆"
+        },
+        "6. Year-over-Year Growth": {
+            "sql": """WITH yearly AS (
+    SELECT EXTRACT(YEAR FROM date) as year,
+           ROUND(SUM(sales), 0) as total_sales
+    FROM `demand_forecasting.sales`
+    GROUP BY year
+)
+SELECT year, total_sales,
+    ROUND((total_sales - LAG(total_sales) OVER (ORDER BY year)) * 100.0 /
+    LAG(total_sales) OVER (ORDER BY year), 1) as yoy_growth_pct
+FROM yearly ORDER BY year;""",
+            "insight": "~8% YoY growth. Without a trend feature, the model would systematically underpredict future demand.",
+            "icon": "📈"
+        },
+        "7. Promotion Impact": {
+            "sql": """SELECT
+    family as product_category,
+    ROUND(AVG(CASE WHEN onpromotion > 0 THEN sales END), 2) as with_promo,
+    ROUND(AVG(CASE WHEN onpromotion = 0 THEN sales END), 2) as without_promo,
+    ROUND(
+        (AVG(CASE WHEN onpromotion > 0 THEN sales END) -
+         AVG(CASE WHEN onpromotion = 0 THEN sales END)) * 100.0 /
+        NULLIF(AVG(CASE WHEN onpromotion = 0 THEN sales END), 0), 1
+    ) as promo_lift_pct
+FROM `demand_forecasting.sales`
+GROUP BY family
+HAVING with_promo IS NOT NULL
+ORDER BY promo_lift_pct DESC;""",
+            "insight": "GROCERY +42% lift vs BABY CARE +3%. $200K+ in misallocated marketing spend identified.",
+            "icon": "🏷️"
+        },
+        "8. Holiday Effects": {
+            "sql": """SELECT h.type as holiday_type, h.description,
+    ROUND(AVG(s.sales), 2) as avg_sales_on_holiday,
+    ROUND(AVG(s.sales) * 100.0 /
+        (SELECT AVG(sales) FROM `demand_forecasting.sales`) - 100, 1
+    ) as pct_vs_average
+FROM `demand_forecasting.sales` s
+JOIN `demand_forecasting.holidays` h
+    ON CAST(s.date AS STRING) = CAST(h.date AS STRING)
+WHERE h.locale = 'National'
+GROUP BY h.type, h.description
+HAVING COUNT(*) > 100
+ORDER BY pct_vs_average DESC LIMIT 10;""",
+            "insight": "Pre-holiday surge +25%, holiday day drop -60%. Created proximity features instead of binary flags.",
+            "icon": "🎄"
+        },
+        "9. Oil Price Correlation": {
+            "sql": """WITH daily_sales AS (
+    SELECT date, SUM(sales) as total_daily_sales
+    FROM `demand_forecasting.sales` GROUP BY date
+),
+combined AS (
+    SELECT ds.total_daily_sales, o.dcoilwtico as oil_price
+    FROM daily_sales ds
+    JOIN `demand_forecasting.oil` o
+        ON CAST(ds.date AS STRING) = CAST(o.date AS STRING)
+    WHERE o.dcoilwtico IS NOT NULL
+)
+SELECT ROUND(CORR(oil_price, total_daily_sales), 4) as correlation
+FROM combined;""",
+            "insight": "Correlation = 0.15. Weak but measurable. Ecuador's oil-dependent economy affects consumer spending.",
+            "icon": "🛢️"
+        },
+        "10. Zero Sales (Data Sparsity)": {
+            "sql": """SELECT family as product_category,
+    ROUND(COUNTIF(sales = 0) * 100.0 / COUNT(*), 1) as zero_pct,
+    CASE
+        WHEN COUNTIF(sales = 0) * 100.0 / COUNT(*) > 70 THEN 'EXCLUDE'
+        WHEN COUNTIF(sales = 0) * 100.0 / COUNT(*) > 40 THEN 'CAUTION'
+        ELSE 'INCLUDE'
+    END as recommendation
+FROM `demand_forecasting.sales`
+GROUP BY family
+ORDER BY zero_pct DESC;""",
+            "insight": "12 of 33 categories have >70% zeros — excluded from ML. Knowing what NOT to automate is equally valuable.",
+            "icon": "⚠️"
+        },
+        "11. Revenue Concentration": {
+            "sql": """WITH top_cat AS (
+    SELECT family FROM `demand_forecasting.sales`
+    GROUP BY family ORDER BY SUM(sales) DESC LIMIT 10
+),
+top_str AS (
+    SELECT store_nbr FROM `demand_forecasting.sales`
+    GROUP BY store_nbr ORDER BY SUM(sales) DESC LIMIT 10
+)
+SELECT
+    ROUND(SUM(s.sales) * 100.0 /
+        (SELECT SUM(sales) FROM `demand_forecasting.sales`), 1) as pct_of_sales
+FROM `demand_forecasting.sales` s
+WHERE s.family IN (SELECT family FROM top_cat)
+  AND s.store_nbr IN (SELECT store_nbr FROM top_str);""",
+            "insight": "Top 10 stores × top 10 categories = 55% of total revenue. ML deployment prioritized here.",
+            "icon": "🎯"
+        }
+    }
+
+    # Query selector
+    selected_query = st.selectbox(
+        "Select a Query",
+        list(sql_queries.keys())
+    )
+
+    query_data = sql_queries[selected_query]
+
+    st.markdown(f"""
+    <div class="glass-card">
+        <h3 style="margin-top:0;">{query_data['icon']} {selected_query}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.code(query_data['sql'], language='sql')
+
+    st.markdown(f"""
+    <div class="insight-box success">
+        <h4>💡 Business Insight</h4>
+        <p>{query_data['insight']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Summary stats
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    sql_col1, sql_col2, sql_col3 = st.columns(3)
+
+    with sql_col1:
+        st.markdown("""
+        <div class="metric-card emerald">
+            <div class="metric-icon">🗃️</div>
+            <div class="metric-value emerald-text" style="font-size: 1.4rem;">12</div>
+            <div class="metric-label">SQL Queries Written</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with sql_col2:
+        st.markdown("""
+        <div class="metric-card sky">
+            <div class="metric-icon">📊</div>
+            <div class="metric-value sky-text" style="font-size: 1.4rem;">3M+</div>
+            <div class="metric-label">Rows Analyzed</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with sql_col3:
+        st.markdown("""
+        <div class="metric-card amber">
+            <div class="metric-icon">🔍</div>
+            <div class="metric-value amber-text" style="font-size: 1.4rem;">5</div>
+            <div class="metric-label">Tables Joined</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="insight-box">
+        <h4>📓 Full SQL File</h4>
+        <p>
+            All 12 queries with detailed comments are available in the repository:
+            <a href="https://github.com/anushkundu/demand-forecasting-system/blob/main/notebooks/00_EDA_BigQuery_Queries.sql"
+               target="_blank" style="color: #2d6a4f; font-weight: 600;">
+                View on GitHub →
+            </a>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ============================================
+# TAB 3: EDA INSIGHTS
+# ============================================
+
+with tab3:
     st.markdown("""
     <div class="section-header animate-fade-up">
         <div class="icon">📊</div>
@@ -1506,10 +1762,10 @@ GRADIENT_COLORSCALE = [
 
 
 # ============================================
-# TAB 3: MODEL PERFORMANCE
+# TAB 4: MODEL PERFORMANCE
 # ============================================
 
-with tab3:
+with tab4:
     st.markdown("""
     <div class="section-header animate-fade-up">
         <div class="icon">📈</div>
@@ -1844,10 +2100,10 @@ with tab3:
 
 
 # ============================================
-# TAB 4: FEATURE IMPORTANCE
+# TAB 5: FEATURE IMPORTANCE
 # ============================================
 
-with tab4:
+with tab5:
     st.markdown("""
     <div class="section-header animate-fade-up">
         <div class="icon">🔍</div>
@@ -2197,10 +2453,10 @@ with tab4:
         )
 
 # ============================================
-# TAB 5: ABOUT
+# TAB 6: ABOUT
 # ============================================
 
-with tab5:
+with tab6:
     st.markdown("""
     <div class="section-header animate-fade-up">
         <div class="icon">ℹ️</div>
