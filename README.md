@@ -76,13 +76,13 @@ demand-forecasting-system/
 │   └── app.py                   # Streamlit dashboard (5 tabs)
 │
 ├── models/
-│   ├── best_model_lgbm.pkl      # Trained model file
+│   ├── best_model_xgb.pkl      # Trained model file
 │   └── feature_columns.json     # Feature list (60+ features)
 │
 ├── notebooks/
-│   ├── 01_EDA_BigQuery.ipynb          # Week 1: SQL EDA
-│   ├── 02_Feature_Engineering.ipynb   # Week 2: PySpark features
-│   └── 03_Model_Training.ipynb       # Week 3: Model comparison
+│   ├── 01_EDA_BigQuery.ipynb         
+│   ├── 02_Feature_Engineering.ipynb  
+│   └── 03_Model_Training.ipynb       
 │
 ├── results/
 │   ├── eda/                     # EDA visualizations
@@ -102,8 +102,7 @@ demand-forecasting-system/
 ├── Dockerfile                   # Container configuration
 ├── docker-compose.yml           # Multi-service orchestration
 ├── requirements.txt             # Python dependencies
-├── .gitignore
-└── README.md
+└── .gitignore
 ```
 
 ---
