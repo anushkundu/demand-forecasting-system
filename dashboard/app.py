@@ -994,12 +994,12 @@ with tab1:
         with input_col_a:
             yesterday_sales = st.number_input(
                 "🔵 Yesterday's Sales",
-                min_value=0, max_value=50000, value=4200, step=100,
+                min_value=0, max_value=50000, value=600, step=100,
                 help="Units sold yesterday"
             )
             weekly_average = st.number_input(
                 "🟢 7-Day Average",
-                min_value=0, max_value=50000, value=4100, step=100,
+                min_value=0, max_value=50000, value=400, step=100,
                 help="Average daily sales over the past week"
             )
             is_promotion = st.toggle("🏷️ Promotion Active", value=False)
@@ -1007,7 +1007,7 @@ with tab1:
         with input_col_b:
             last_week_sales = st.number_input(
                 "🟡 Same Day Last Week",
-                min_value=0, max_value=50000, value=4050, step=100,
+                min_value=0, max_value=50000, value=350, step=100,
                 help="Sales on this same weekday last week"
             )
             day_of_week = st.selectbox(
