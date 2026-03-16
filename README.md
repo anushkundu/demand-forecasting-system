@@ -178,9 +178,9 @@ import requests
 response = requests.post(
     "http://localhost:8000/quick-predict",
     json={
-        "yesterday_sales": 4200,
-        "last_week_same_day": 4050,
-        "weekly_average": 4100,
+        "yesterday_sales": 600,
+        "last_week_same_day": 550,
+        "weekly_average": 500,
         "day_of_week": 7,
         "is_promotion": True,
         "is_holiday": False
@@ -189,7 +189,7 @@ response = requests.post(
 
 print(response.json())
 # {
-#     "predicted_demand": 4350.2,
+#     "predicted_demand": 650,
 #     "confidence": "medium",
 #     "recommendation": "High demand — increase stock order",
 #     "features_provided": 7,
@@ -203,20 +203,20 @@ print(response.json())
 response = requests.post(
     "http://localhost:8000/predict",
     json={
-        "sales_lag_1": 4200,
-        "sales_lag_7": 4050,
-        "rolling_mean_7": 4100,
+        "sales_lag_1": 420,
+        "sales_lag_7": 450,
+        "rolling_mean_7": 410,
         "day_of_week": 7,
         "month": 12,
         "onpromotion": 5,
         "is_weekend": 1,
         "is_holiday": 0,
-        "rolling_mean_14": 4050,
-        "rolling_mean_30": 3900,
+        "rolling_mean_14": 400,
+        "rolling_mean_30": 390,
         "oil_price": 52.3,
         "store_type_encoded": 4,
         "family_encoded": 0,
-        "category_avg_all_stores": 3800
+        "category_avg_all_stores": 380
     }
 )
 print(response.json())
@@ -228,9 +228,9 @@ print(response.json())
 curl -X POST "http://localhost:8000/quick-predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "yesterday_sales": 4200,
-    "last_week_same_day": 4050,
-    "weekly_average": 4100,
+    "yesterday_sales": 420,
+    "last_week_same_day": 450,
+    "weekly_average": 410,
     "day_of_week": 7,
     "is_promotion": true,
     "is_holiday": false
