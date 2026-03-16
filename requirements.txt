@@ -1,0 +1,13 @@
+# File: requirements.txt
+
+fastapi
+uvicorn
+python-multipart
+XGBoost
+scikit-learn
+pandas
+numpy
+streamlit
+plotly
+pydantic
+requests

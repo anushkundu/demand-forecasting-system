@@ -1,0 +1,6 @@
+Model,MAE,RMSE,MAPE,R²,Improvement vs Baseline
+Baseline (7-Day MA),721.8,1336.5,26.47,0.8519,0.0%
+Linear Regression,402.8,710.5,21.02,0.9581,20.6%
+Random Forest,254.7,496.8,10.76,0.9795,59.4%
+XGBoost,221.0,440.9,9.42,0.9839,64.4%
+LightGBM,229.2,446.2,9.98,0.9835,62.3%

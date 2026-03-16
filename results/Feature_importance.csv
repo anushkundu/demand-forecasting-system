@@ -1,0 +1,16 @@
+Feature,Importance,Business Meaning
+rolling_mean_7,0.4987,7-Day Average
+sales_lag_7,0.3225,Same Day Last Week
+category_avg_all_stores ,0.106,Category Average of All Stores
+sales_lag_14 ,0.0219,2 Weeks Ago Sales
+sales_lag_1 ,0.0105,Yesterday's Sales
+expanding_std ,0.0093,Cumulative Sales Volatility
+sales_lag_28 ,0.005,28 Days Ago Sales
+cluster  ,0.0028,Store/Product Segment Group
+rolling_std_7 ,0.0022,7-Day Volatility
+rolling_max_7 ,0.0019,7-Day Peak
+rolling_max_14 ,0.0014,14-Day Peak
+expanding_mean ,0.0013,Historical Cumulative Average
+rolling_std_14 ,0.001,14-Day Volatility
+rolling_mean_30 ,0.001,30-Day Average
+day_of_month  ,0.001,Day of month  
