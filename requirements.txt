@@ -1,13 +1,12 @@
-# File: requirements.txt
-
 fastapi
 uvicorn
 python-multipart
-XGBoost
+lightgbm
 scikit-learn
 pandas
 numpy
-streamlit
+streamlit>=1.32.0
 plotly
 pydantic
 requests
+altair<5
